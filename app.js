@@ -26,6 +26,7 @@
             board = Chessboard('board', {
                 position: 'start',
                 draggable: true,
+                showNotation: false,
                 pieceTheme: 'https://lichess1.org/assets/piece/cburnett/{piece}.svg',
                 onDragStart: onDragStart,
                 onDrop: onDrop,
