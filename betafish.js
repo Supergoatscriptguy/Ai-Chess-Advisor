@@ -2287,11 +2287,55 @@ const betafishEngine = function() {
     SearchController.time = time * 1000;
   }
 
+  function getTopMoves(n) {
+    SearchController.depth = MAXDEPTH;
+    ClearForSearch();
+    GenerateMoves();
+
+    var moves = [];
+    var index;
+    var move;
+
+    for (index = GameBoard.moveListStart[GameBoard.ply];
+         index < GameBoard.moveListStart[GameBoard.ply + 1];
+         ++index) {
+      move = GameBoard.moveList[index];
+      if (MakeMove(move) == false) {
+        continue;
+      }
+
+      var score = -AlphaBeta(-INFINITE, INFINITE, 3);
+      TakeMove();
+
+      moves.push({
+        move: move,
+        score: score
+      });
+    }
+
+    moves.sort(function(a, b) { return b.score - a.score; });
+    return moves.slice(0, Math.min(n, moves.length));
+  }
+
+  function evaluate(fen) {
+    if (fen) {
+      ParseFen(fen);
+    }
+    var score = EvalPosition();
+    if (GameBoard.side == COLOURS.BLACK) {
+      score = -score;
+    }
+    return {
+      score: score,
+      bestMove: getBestMove()
+    };
+  }
+
   /****************************\
    ============================
-   
+
     Public API
-   ============================              
+   ============================
   \****************************/
 
   return {
@@ -2301,50 +2345,10 @@ const betafishEngine = function() {
     move: move,
     makeAIMove: makeAIMove,
     getBestMove: getBestMove,
+    getTopMoves: getTopMoves,
+    evaluate: evaluate,
     reset: reset,
     gameStatus: gameStatus,
     setThinkingTime: setThinkingTime,
   };
-};
-
-// Add these functions to your betafishEngine if they don't exist already
-
-// Returns the top n best moves
-betafishEngine.prototype.getTopMoves = function(n) {
-    const moves = [];
-    const rootMoves = this.generateMoves();
-    
-    // Sort moves by score
-    for (let i = 0; i < rootMoves.length; i++) {
-        const move = rootMoves[i];
-        this.makeMove(move);
-        const score = -this.negamax(-10000, 10000, this.searchDepth);
-        this.unmakeMove();
-        
-        moves.push({
-            move: move,
-            score: score
-        });
-    }
-    
-    // Sort by score (best first)
-    moves.sort((a, b) => b.score - a.score);
-    
-    // Return top n moves (or all if fewer than n)
-    return moves.slice(0, Math.min(n, moves.length));
-};
-
-// Evaluates the current position and returns a score
-betafishEngine.prototype.evaluate = function(fen) {
-    if (fen) {
-        this.setFEN(fen);
-    }
-    
-    // Perform a quick evaluation (no deep search)
-    const score = this.evaluatePosition();
-    
-    return {
-        score: score,
-        bestMove: this.getBestMove()
-    };
 };
